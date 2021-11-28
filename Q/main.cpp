@@ -172,6 +172,5 @@ int main() {
     }
 
     std::cout << ShortPath(graph, 1, level) << std::endl;
-
     return 0;
 }
