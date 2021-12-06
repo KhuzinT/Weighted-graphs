@@ -1,11 +1,13 @@
 #include <iostream>
 #include <vector>
 
-using WeightT = int32_t;
-
-const int32_t kInfinity = 1000 * 1000 * 1000 * 1LL;
-
 class IGraph {
+public:
+
+    using WeightT = int32_t;
+
+    const int32_t kInfinity = 1000 * 1000 * 1000 * 1LL;
+
 protected:
     uint32_t q_vertex_ = 0;
 
@@ -42,7 +44,7 @@ public:
     }
 };
 
-std::vector<std::vector<WeightT>> FloydWarshallAlgorithm(IGraph& graph) {
+std::vector<std::vector<IGraph::WeightT>> FloydWarshallAlgorithm(IGraph& graph) {
     auto matrix = graph.GetMatrix();
     for (uint32_t iteration = 0; iteration < graph.GetQVertex(); ++iteration) {
         for (uint32_t current_vertex = 0; current_vertex < graph.GetQVertex(); ++current_vertex) {
@@ -57,7 +59,7 @@ std::vector<std::vector<WeightT>> FloydWarshallAlgorithm(IGraph& graph) {
     return matrix;
 }
 
-void PrintMatrix(std::vector<std::vector<WeightT>>& matrix) {
+void PrintMatrix(std::vector<std::vector<IGraph::WeightT>>& matrix) {
     for (uint32_t i = 0; i < matrix.size(); ++i) {
         for (uint32_t j = 0; j < matrix[0].size(); ++j) {
             std::cout << matrix[i][j] << ' ';
@@ -72,7 +74,7 @@ int main() {
 
     GraphMatrix graph(q_vertex);
 
-    std::vector<std::vector<WeightT>> matrix(q_vertex);
+    std::vector<std::vector<IGraph::WeightT>> matrix(q_vertex);
 
     for (uint32_t i = 0; i < q_vertex; ++i) {
         matrix[i].resize(q_vertex);
