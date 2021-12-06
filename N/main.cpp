@@ -42,12 +42,14 @@ public:
     }
 };
 
-std::vector<std::vector<WeightT>> FloydWarshallAlgorithm(GraphMatrix& graph) {
+std::vector<std::vector<WeightT>> FloydWarshallAlgorithm(IGraph& graph) {
     auto matrix = graph.GetMatrix();
-    for (uint32_t t = 0; t < graph.GetQVertex(); ++t) {
-        for (uint32_t i = 0; i < graph.GetQVertex(); ++i) {
-            for (uint32_t j = 0; j < graph.GetQVertex(); ++j) {
-                matrix[i][j] = std::min(matrix[i][j], matrix[i][t] + matrix[t][j]);
+    for (uint32_t iteration = 0; iteration < graph.GetQVertex(); ++iteration) {
+        for (uint32_t current_vertex = 0; current_vertex < graph.GetQVertex(); ++current_vertex) {
+            for (uint32_t next_vertex = 0; next_vertex < graph.GetQVertex(); ++next_vertex) {
+                matrix[current_vertex][next_vertex] =
+                    std::min(matrix[current_vertex][next_vertex],
+                             matrix[current_vertex][iteration] + matrix[iteration][next_vertex]);
             }
         }
     }
@@ -70,16 +72,13 @@ int main() {
 
     GraphMatrix graph(q_vertex);
 
-    std::vector<std::vector<WeightT>> matrix;
+    std::vector<std::vector<WeightT>> matrix(q_vertex);
 
     for (uint32_t i = 0; i < q_vertex; ++i) {
-        std::vector<WeightT> tmp;
+        matrix[i].resize(q_vertex);
         for (uint32_t j = 0; j < q_vertex; ++j) {
-            WeightT weight = 0;
-            std::cin >> weight;
-            tmp.push_back(weight);
+            std::cin >> matrix[i][j];
         }
-        matrix.push_back(tmp);
     }
 
     graph.FillMatrix(matrix);
