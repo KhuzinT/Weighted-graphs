@@ -6,7 +6,7 @@ public:
 
     using WeightT = int32_t;
 
-    const int32_t kInfinity = 1000 * 1000 * 1000 * 1LL;
+    const int32_t kINFINITY = 1000 * 1000 * 1000 * 1LL;
 
 protected:
     uint32_t q_vertex_ = 0;
@@ -25,7 +25,7 @@ private:
 
 public:
     explicit GraphMatrix(const uint32_t& quantity) {
-        std::vector<WeightT> tmp(quantity, kInfinity);
+        std::vector<WeightT> tmp(quantity, kINFINITY);
         matrix_.resize(quantity, tmp);
 
         q_vertex_ = quantity;
@@ -76,17 +76,17 @@ int main() {
 
     std::vector<std::vector<IGraph::WeightT>> matrix(q_vertex);
 
-    for (uint32_t i = 0; i < q_vertex; ++i) {
-        matrix[i].resize(q_vertex);
-        for (uint32_t j = 0; j < q_vertex; ++j) {
-            std::cin >> matrix[i][j];
+    for (uint32_t current_vertex = 0; current_vertex < q_vertex; ++current_vertex) {
+        matrix[current_vertex].resize(q_vertex);
+        for (uint32_t next_vertex = 0; next_vertex < q_vertex; ++next_vertex) {
+            std::cin >> matrix[current_vertex][next_vertex];
         }
     }
 
     graph.FillMatrix(matrix);
 
-    auto answer = FloydWarshallAlgorithm(graph);
-    PrintMatrix(answer);
+    auto update_matrix = FloydWarshallAlgorithm(graph);
+    PrintMatrix(update_matrix);
 
     return 0;
 }
