@@ -3,12 +3,13 @@
 #include <vector>
 #include <set>
 
-const uint32_t kINFINITY = 1000 * 1000 * 1000 * 1LL;
-
 //********************************************************************************************
 
 class IGraph {
 public:
+
+    static const uint32_t kINFINITY = 1000 * 1000 * 1000 * 1LL;
+
     using Vertex = uint32_t;
 
     using DistT = uint32_t;
@@ -34,19 +35,27 @@ protected:
 
     bool is_oriented_ = false;
 
+    virtual void Add(const Vertex& begin, const Vertex& end, const WeightT& weight) = 0;
+
 public:
     [[nodiscard]] uint32_t GetQVertex() const {
         return q_vertex_;
     }
 
-    virtual void Add(const Vertex& begin, const Vertex& end, const WeightT& weight) = 0;
-
-    void AddWeightEdge(const Vertex& begin, const Vertex& end, const WeightT& weight) {
+    void AddWeightEdgeInNumberingFromOne(const Vertex& begin, const Vertex& end, const WeightT& weight) {
         Add(begin - 1, end - 1, weight);
     }
 
-    void AddEdge(const Vertex& begin, const Vertex& end) {
+    void AddEdgeInNumberingFromOne(const Vertex& begin, const Vertex& end) {
         Add(begin - 1, end - 1, 0);
+    }
+
+    void AddWeightEdgeInNumberingFromZero(const Vertex& begin, const Vertex& end, const WeightT& weight) {
+        Add(begin, end, weight);
+    }
+
+    void AddEdgeInNumberingFromZero(const Vertex& begin, const Vertex& end) {
+        Add(begin, end, 0);
     }
 
     virtual const std::vector<IncomingEdge>& GetNeighbors(const Vertex& vertex) const = 0;
@@ -80,8 +89,8 @@ public:
 
 //********************************************************************************************
 
-IGraph::DistT DijkstraAlgorithm(IGraph& graph, const IGraph::Vertex& start, const IGraph::Vertex& finish) {
-    std::vector<IGraph::DistT> dist(graph.GetQVertex(), kINFINITY);
+IGraph::DistT DijkstraAlgorithm(const IGraph& graph, const IGraph::Vertex& start, const IGraph::Vertex& finish) {
+    std::vector<IGraph::DistT> dist(graph.GetQVertex(), IGraph::kINFINITY);
     dist[start] = 0;
 
     std::set<IGraph::IncomingEdge> queue;
@@ -105,7 +114,7 @@ IGraph::DistT DijkstraAlgorithm(IGraph& graph, const IGraph::Vertex& start, cons
     return dist[finish];
 }
 
-IGraph::DistT ShortPath(IGraph& graph, const IGraph::Vertex& start, const IGraph::Vertex& finish) {
+IGraph::DistT ShortPath(const IGraph& graph, const IGraph::Vertex& start, const IGraph::Vertex& finish) {
     return DijkstraAlgorithm(graph, start - 1, finish - 1);
 }
 
@@ -147,8 +156,8 @@ int main() {
     IGraph::Vertex not_used_vertex = max_level + 1;
     for (uint32_t lift_iteration = 0; lift_iteration < lift_info.size(); ++lift_iteration) {
         for (uint32_t iteration = 0; iteration < lift_info[lift_iteration].size(); ++iteration) {
-            graph.AddWeightEdge(not_used_vertex, lift_info[lift_iteration][iteration], from_lift);
-            graph.AddWeightEdge(lift_info[lift_iteration][iteration], not_used_vertex, in_lift);
+            graph.AddWeightEdgeInNumberingFromOne(not_used_vertex, lift_info[lift_iteration][iteration], from_lift);
+            graph.AddWeightEdgeInNumberingFromOne(lift_info[lift_iteration][iteration], not_used_vertex, in_lift);
         }
         ++not_used_vertex;
     }
@@ -156,12 +165,12 @@ int main() {
     if (max_level != 1) {
         for (uint32_t current_level = 1; current_level <= max_level; ++current_level) {
             if (current_level == 1) {
-                graph.AddWeightEdge(current_level, current_level + 1, level_up);
+                graph.AddWeightEdgeInNumberingFromOne(current_level, current_level + 1, level_up);
             } else if (current_level == max_level) {
-                graph.AddWeightEdge(current_level, current_level - 1, level_down);
+                graph.AddWeightEdgeInNumberingFromOne(current_level, current_level - 1, level_down);
             } else {
-                graph.AddWeightEdge(current_level, current_level + 1, level_up);
-                graph.AddWeightEdge(current_level, current_level - 1, level_down);
+                graph.AddWeightEdgeInNumberingFromOne(current_level, current_level + 1, level_up);
+                graph.AddWeightEdgeInNumberingFromOne(current_level, current_level - 1, level_down);
             }
         }
     }
