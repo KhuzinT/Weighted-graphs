@@ -3,26 +3,16 @@
 
 const uint32_t kInfinity = 100 * 100 * 100;
 
-struct Edge {
-    uint32_t begin;
-    uint32_t end;
+template <typename Type>
+const Type kZero = 0;
 
-    uint32_t weight;
-
-    explicit Edge(const uint32_t& a, const uint32_t& b, const uint32_t& w) {
-        begin = a - 1;
-        end = b - 1;
-
-        weight = w;
-    }
-};
-
+template <typename Type>
 class DSU {
 private:
     std::vector<uint32_t> parent_;
     std::vector<uint32_t> rank_;
 
-    std::vector<uint32_t> leader_weight_;
+    std::vector<Type> leader_value_;
 
 public:
     explicit DSU(const uint32_t& quantity) {
@@ -31,7 +21,7 @@ public:
             parent_[i] = i;
         }
         rank_.resize(quantity, 0);
-        leader_weight_.resize(quantity, 0);
+        leader_value_.resize(quantity, kZero<Type>);
     }
 
     uint32_t FindSet(const uint32_t& element) {
@@ -60,28 +50,26 @@ public:
         }
     }
 
-    void AddEdge(const Edge& edge) {
-        uint32_t first_leader = FindSet(edge.begin);
-        uint32_t second_leader = FindSet(edge.end);
+    void AddConnection(const uint32_t& first_elem, const uint32_t& second_elem, const Type& value) {
+        uint32_t first_leader = FindSet(first_elem);
+        uint32_t second_leader = FindSet(second_elem);
 
         if (first_leader == second_leader) {
-            leader_weight_[first_leader] += edge.weight;
+            leader_value_[first_leader] += value;
         } else {
-            UnionSets(edge.begin, edge.end);
-            uint32_t new_leader = FindSet(edge.begin);
+            UnionSets(first_elem, second_elem);
+            uint32_t new_leader = FindSet(first_elem);
 
-            uint32_t new_weight = edge.weight;
-            new_weight += leader_weight_[first_leader];
-            new_weight += leader_weight_[second_leader];
-            leader_weight_[new_leader] = new_weight;
-            leader_weight_[first_leader] = new_weight;
-            leader_weight_[second_leader] = new_weight;
+            Type new_weight = value;
+            new_weight += leader_value_[first_leader];
+            new_weight += leader_value_[second_leader];
+            leader_value_[new_leader] = new_weight;
         }
     }
 
-    uint32_t GetWeightComp(const uint32_t& vertex) {
-        uint32_t leader = FindSet(vertex - 1);
-        return leader_weight_[leader];
+    Type GetValueComp(const uint32_t& elem) {
+        uint32_t leader = FindSet(elem);
+        return leader_value_[leader];
     }
 };
 
@@ -93,7 +81,7 @@ int main() {
     uint32_t quantity_requests = 0;
     std::cin >> quantity_vertex >> quantity_requests;
 
-    DSU graph(quantity_vertex);
+    DSU<uint32_t> graph(quantity_vertex);
 
     for (uint32_t i = 0; i < quantity_requests; ++i) {
         char indicator = 0;
@@ -103,13 +91,12 @@ int main() {
             uint32_t end = 0;
             uint32_t weight = 0;
             std::cin >> begin >> end >> weight;
-            Edge edge(begin, end, weight);
-            graph.AddEdge(edge);
+            graph.AddConnection(begin - 1, end - 1, weight);
         }
         if (indicator == '2') {
             uint32_t vertex = 0;
             std::cin >> vertex;
-            std::cout << graph.GetWeightComp(vertex) << '\n';
+            std::cout << graph.GetValueComp(vertex - 1) << '\n';
         }
     }
 
