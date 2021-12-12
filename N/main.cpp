@@ -32,9 +32,9 @@ public:
     }
 
     void FillMatrix(const std::vector<std::vector<WeightT>>& matrix) {
-        for (uint32_t i = 0; i < q_vertex_; ++i) {
-            for (uint32_t j = 0; j < q_vertex_; ++j) {
-                matrix_[i][j] = matrix[i][j];
+        for (uint32_t iteration = 0; iteration < q_vertex_; ++iteration) {
+            for (uint32_t position = 0; position < q_vertex_; ++position) {
+                matrix_[iteration][position] = matrix[iteration][position];
             }
         }
     }
@@ -60,9 +60,9 @@ std::vector<std::vector<IGraph::WeightT>> FloydWarshallAlgorithm(IGraph& graph) 
 }
 
 void PrintMatrix(std::vector<std::vector<IGraph::WeightT>>& matrix) {
-    for (uint32_t i = 0; i < matrix.size(); ++i) {
-        for (uint32_t j = 0; j < matrix[0].size(); ++j) {
-            std::cout << matrix[i][j] << ' ';
+    for (uint32_t iteration = 0; iteration < matrix.size(); ++iteration) {
+        for (uint32_t position = 0; position < matrix[0].size(); ++position) {
+            std::cout << matrix[iteration][position] << ' ';
         }
         std::cout << std::endl;
     }
