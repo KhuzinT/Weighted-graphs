@@ -2,55 +2,67 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <any>
 
 //********************************************************************************************
 
-using Vertex = uint32_t;
+template <typename Type>
+const Type kZero = 0;
 
-using WeightT = uint32_t;
+class IGraph {
+public:
+    inline static const uint32_t kINFINITY = 1000 * 1000 * 1000 * 1LL;
 
-const uint32_t kInfinity = 1000 * 1000 * 1000 * 1LL;
+    using Vertex = uint32_t;
 
-//********************************************************************************************
+    using WeightT = uint32_t;
 
-struct Edge {
-    Vertex begin;
-    Vertex end;
+    template <typename Type>
+    struct Edge {
+        Vertex begin;
+        Vertex end;
 
-    WeightT weight;
+        Type edge_info;
 
-    explicit Edge(const Vertex& a, const Vertex& b, const WeightT& w) {
-        begin = a;
-        end = b;
-        weight = w;
-    }
+        explicit Edge(const Vertex& first, const Vertex& second, const Type& info) {
+            begin = first;
+            end = second;
 
-    bool operator<(const Edge& other) const {
-        if (weight < other.weight) {
-            return true;
+            edge_info = info;
         }
-        if (weight > other.weight) {
-            return false;
-        }
-        if (begin < other.begin) {
-            return true;
-        }
-        if (begin > other.begin) {
-            return false;
-        }
-        return end < other.end;
-    }
-};
 
-class GraphListEdge {
-private:
-    uint32_t q_edge_ = 0;
+        bool operator<(const Edge<Type>& other) const {
+            return std::make_pair(edge_info, std::make_pair(begin, end)) <
+                   std::make_pair(other.edge_info, std::make_pair(other.begin, other.end));
+        }
+    };
+
+protected:
     uint32_t q_vertex_ = 0;
 
-    std::vector<Edge> list_;
+    uint32_t q_edge_ = 0;
 
-    void Add(const Vertex& begin, const Vertex& end, const WeightT& weight) {
-        Edge edge(begin, end, weight);
+public:
+    [[nodiscard]] uint32_t GetQVertex() const {
+        return q_vertex_;
+    }
+
+    uint32_t GetQEdge() const {
+        return q_edge_;
+    }
+
+    virtual std::any GetEdge(const uint32_t& index) const = 0;
+
+    virtual void SortEdges() = 0;
+};
+
+template <typename Type>
+class GraphListEdge final : public IGraph {
+private:
+    std::vector<Edge<Type>> list_;
+
+    void Add(const Vertex& begin, const Vertex& end, const Type& edge_info) {
+        Edge<Type> edge(begin, end, edge_info);
         list_.push_back(edge);
         ++q_edge_;
     }
@@ -60,24 +72,28 @@ public:
         q_vertex_ = quantity_vertex;
     }
 
-    uint32_t GetQVertex() const {
-        return q_vertex_;
+    void AddWeightEdgeInNumberingFromOne(const Vertex& begin, const Vertex& end, const Type& edge_info) {
+        Add(begin - 1, end - 1, edge_info);
     }
 
-    uint32_t GetQEdge() const {
-        return q_edge_;
+    void AddWeightEdgeInNumberingFromZero(const Vertex& begin, const Vertex& end, const Type& edge_info) {
+        Add(begin, end, edge_info);
     }
 
-    void AddEdge(const Vertex& begin, const Vertex& end, const WeightT& weight) {
-        Add(begin - 1, end - 1, weight);
+    void AddEdgeInNumberingFromOne(const Vertex& begin, const Vertex& end) {
+        Add(begin - 1, end - 1, kZero<Type>);
     }
 
-    void SortEdges() {
+    void AddEdgeInNumberingFromZero(const Vertex& begin, const Vertex& end) {
+        Add(begin, end, kZero<Type>);
+    }
+
+    std::any GetEdge(const uint32_t& iteration) const override {
+        return list_[iteration];
+    }
+
+    void SortEdges() override {
         std::sort(list_.begin(), list_.end());
-    }
-
-    Edge GetEdge(const uint32_t& index) const {
-        return list_[index];
     }
 };
 
@@ -88,7 +104,7 @@ private:
 
 public:
     explicit DSU(const uint32_t& quantity) {
-        parent_.resize(quantity, kInfinity);
+        parent_.resize(quantity, IGraph::kINFINITY);
         for (uint32_t i = 0; i < quantity; ++i) {
             parent_[i] = i;
         }
@@ -122,24 +138,46 @@ public:
     }
 };
 
-uint32_t KruskalAlgorithm(GraphListEdge& graph) {
-    uint32_t answer = 0;
+uint32_t KruskalAlgorithm(IGraph& graph) {
+    uint32_t min_weight = 0;
 
-    DSU system(graph.GetQVertex());
+    DSU dsu(graph.GetQVertex());
     graph.SortEdges();
 
-    for (uint32_t i = 0; i < graph.GetQEdge(); ++i) {
-        auto edge = graph.GetEdge(i);
-        Vertex first_vertex = edge.begin;
-        Vertex second_vertex = edge.end;
+    for (uint32_t iteration = 0; iteration < graph.GetQEdge(); ++iteration) {
+        auto any_edge = graph.GetEdge(iteration);
+        auto edge = std::any_cast<IGraph::Edge<IGraph::WeightT>>(any_edge);
+        IGraph::Vertex first_vertex = edge.begin;
+        IGraph::Vertex second_vertex = edge.end;
 
-        if (system.FindSet(first_vertex) != system.FindSet(second_vertex)) {
-            answer += edge.weight;
-            system.UnionSets(first_vertex, second_vertex);
+        if (dsu.FindSet(first_vertex) != dsu.FindSet(second_vertex)) {
+            min_weight += edge.edge_info;
+            dsu.UnionSets(first_vertex, second_vertex);
         }
     }
 
-    return answer;
+    return min_weight;
+}
+
+std::vector<IGraph::Edge<IGraph::WeightT>> KruskalAlgorithmEdges(IGraph& graph) {
+    std::vector<IGraph::Edge<IGraph::WeightT>> edge_list;
+
+    DSU dsu(graph.GetQVertex());
+    graph.SortEdges();
+
+    for (uint32_t iteration = 0; iteration < graph.GetQEdge(); ++iteration) {
+        auto any_edge = graph.GetEdge(iteration);
+        auto edge = std::any_cast<IGraph::Edge<IGraph::WeightT>>(any_edge);
+        IGraph::Vertex first_vertex = edge.begin;
+        IGraph::Vertex second_vertex = edge.end;
+
+        if (dsu.FindSet(first_vertex) != dsu.FindSet(second_vertex)) {
+            edge_list.push_back(edge);
+            dsu.UnionSets(first_vertex, second_vertex);
+        }
+    }
+
+    return edge_list;
 }
 
 //********************************************************************************************
@@ -151,32 +189,30 @@ int main() {
     uint32_t q_vertex = 0;
     std::cin >> q_vertex;
 
-    GraphListEdge graph(q_vertex + 1);
+    GraphListEdge<IGraph::WeightT> graph(q_vertex + 1);
 
-    std::vector<std::vector<Vertex>> matrix;
-    for (uint32_t i = 0; i < q_vertex; ++i) {
-        std::vector<Vertex> tmp(q_vertex, 0);
-        matrix.push_back(tmp);
+    std::vector<std::vector<IGraph::Vertex>> matrix(q_vertex);
+    for (uint32_t iteration = 0; iteration < q_vertex; ++iteration) {
+        matrix[iteration].resize(q_vertex, 0);
     }
 
-    for (uint32_t i = 0; i < q_vertex; ++i) {
-        for (uint32_t j = 0; j < q_vertex; ++j) {
-            std::cin >> matrix[i][j];
-            if (j < i) {
-                graph.AddEdge(i + 1, j + 1, matrix[i][j]);
+    for (uint32_t current_vertex = 0; current_vertex < q_vertex; ++current_vertex) {
+        for (uint32_t next_vertex = 0; next_vertex < q_vertex; ++next_vertex) {
+            std::cin >> matrix[current_vertex][next_vertex];
+            if (next_vertex < current_vertex) {
+                graph.AddWeightEdgeInNumberingFromZero(current_vertex, next_vertex,
+                                                       matrix[current_vertex][next_vertex]);
             }
         }
     }
 
-    for (uint32_t i = 0; i < q_vertex; ++i) {
+    for (uint32_t iteration = 0; iteration < q_vertex; ++iteration) {
         uint32_t cost = 0;
         std::cin >> cost;
-        graph.AddEdge(q_vertex + 1, i + 1, cost);
+        graph.AddWeightEdgeInNumberingFromZero(q_vertex, iteration, cost);
     }
 
-    uint32_t answer = KruskalAlgorithm(graph);
-
-    std::cout << answer;
+    std::cout << KruskalAlgorithm(graph);
 
     return 0;
 }
